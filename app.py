@@ -30,7 +30,6 @@ def create_token():
     password = request.json.get("password")
     user = db.session.query(User).filter_by(username=username,password=password).first()
 
-
     if user is None:
         return jsonify({'message': 'Falied username or password'})
     
@@ -39,14 +38,14 @@ def create_token():
     return jsonify({ "token": access_token, "user_id": user.id })
 
 
-@app.route("/protected", methods=["GET"])
+@app.route("/user", methods=["GET"])
 @jwt_required()
-def protected():
+def get_user():
     # Access the identity of the current user with get_jwt_identity
     current_user_id = get_jwt_identity()
-    user = db.session.query(User).get(current_user_id)
+    user = db.session.get(User, current_user_id)
     
-    return jsonify({"id": user.id, "username": user.username }), 200
+    return jsonify({"Id usuario": user.id, "username": user.username }), 200
 
 
 
