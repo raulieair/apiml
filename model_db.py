@@ -23,3 +23,21 @@ class entry(db.Base):
     
     def __str__(self):
         return "Entry:{} -> specie:{}".format(self.id, self.specie)
+    
+class User(db.Base):
+    __tablename__= "users"
+    id = Column(Integer, primary_key=True)
+    username=Column(String(30), nullable=False)
+    password=Column(String(30), nullable=False)
+
+    def __init__(self,  username, password):
+        
+        self.username = username
+        self.password = password
+        
+
+    def __repr__(self):
+        return "User:{} -> name:{}".format(self.id, self.username)
+    
+    def __str__(self):
+        return "User:{} -> name:{}".format(self.id, self.username)

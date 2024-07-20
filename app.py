@@ -1,18 +1,57 @@
-from flask import Flask,request,jsonify
+from flask import Flask,request,jsonify,session
 import pickle
 import pandas as pd
 import numpy as np
-from model_db import entry
+from model_db import entry, User
 import db
-
 from model import train
+from flask_jwt_extended import JWTManager,create_access_token,jwt_required,get_jwt_identity
+
+
+
 
 #Iniciar app de flask
 app = Flask(__name__)
 
+app.config['SECRET_KEY'] = '123456abc'
+jwt = JWTManager(app)
+
+#Diccionario con usuarios ejemplo para la autenticación
+'''user = {
+    'username': 'admin',
+    'password': '1234'
+}'''
+
+
+@app.route('/token', methods=["POST"])
+def create_token():
+
+    username = request.json.get("username")
+    password = request.json.get("password")
+    user = db.session.query(User).filter_by(username=username,password=password).first()
+
+
+    if user is None:
+        return jsonify({'message': 'Falied username or password'})
+    
+    # Create a new token with the user id inside
+    access_token = create_access_token(identity=user.id)
+    return jsonify({ "token": access_token, "user_id": user.id })
+
+
+@app.route("/protected", methods=["GET"])
+@jwt_required()
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user_id = get_jwt_identity()
+    user = db.session.query(User).get(current_user_id)
+    
+    return jsonify({"id": user.id, "username": user.username }), 200
+
 
 
 @app.route('/predict', methods=["POST"])
+@jwt_required()
 def predict():
     #Cargar modelo
     model = pickle.load(open('models/decisiontree.pkl',"rb"))
@@ -34,6 +73,7 @@ def predict():
 
 
 @app.route('/add_entry', methods=["POST"])
+@jwt_required()
 def add_entry():
     data_json = request.json  
     
@@ -50,6 +90,7 @@ def add_entry():
     return "Added correctly"
 
 @app.route('/train', methods=["POST"])
+@jwt_required()
 def train_model():
     file = request.files['']
     model, accuracy = train(file)
