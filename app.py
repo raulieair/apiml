@@ -7,7 +7,7 @@ import db
 from model import train
 from flask_jwt_extended import JWTManager,create_access_token,jwt_required,get_jwt_identity
 
-
+import mlflow
 
 
 #Iniciar app de flask
@@ -38,6 +38,7 @@ def create_token():
     return jsonify({ "token": access_token, "user_id": user.id })
 
 
+
 @app.route("/user", methods=["GET"])
 @jwt_required()
 def get_user():
@@ -53,8 +54,15 @@ def get_user():
 @jwt_required()
 def predict():
     #Cargar modelo
-    model = pickle.load(open('models/decisiontree.pkl',"rb"))
+    #model = pickle.load(open('models/decisiontree.pkl',"rb"))
+    # Get the MLflow tracking URI
+    mlflow_tracking_uri = mlflow.get_tracking_uri()
 
+    # Use the tracking URI to build the model URI
+    latest_run = mlflow.search_runs(order_by=["start_time desc"]).iloc[0]
+    model_uri = f"{mlflow_tracking_uri}/0/{latest_run.run_id}/artifacts/decision_tree_model"
+    print("------------------",model_uri)
+    model = mlflow.sklearn.load_model(model_uri)
     #Recogida json recibida por la api
     data_json = request.json
 
@@ -92,9 +100,8 @@ def add_entry():
 @jwt_required()
 def train_model():
     file = request.files['']
-    model, accuracy = train(file)
+    accuracy = train(file)
 
-    pickle.dump(model,open('models/decisiontree.pkl','wb'))
     return jsonify({"Accuracy":accuracy}), 200
 
 
