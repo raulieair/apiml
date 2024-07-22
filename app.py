@@ -1,6 +1,5 @@
 from flask import Flask,request,jsonify,session
-import pickle
-import pandas as pd
+
 import numpy as np
 from model_db import entry, User
 import db
@@ -35,7 +34,7 @@ def create_token():
     
     # Create a new token with the user id inside
     access_token = create_access_token(identity=user.id)
-    return jsonify({ "token": access_token, "user_id": user.id })
+    return jsonify({ "token": access_token, "user_id": user.id }), 200
 
 
 
@@ -61,48 +60,68 @@ def predict():
     # Use the tracking URI to build the model URI
     latest_run = mlflow.search_runs(order_by=["start_time desc"]).iloc[0]
     model_uri = f"{mlflow_tracking_uri}/0/{latest_run.run_id}/artifacts/decision_tree_model"
-    print("------------------",model_uri)
+    
+    
     model = mlflow.sklearn.load_model(model_uri)
+    
     #Recogida json recibida por la api
     data_json = request.json
+    
+    if type(data_json)==list:
+        try:
+            #Lista para guardar arrays a predecir
+            data_predict = []
 
-    #Lista para guardar arrays a predecir
-    data_predict = []
+            #Recorro los elementos del json creando los arrays para cada uno y añadiendolo a la lista a predecir
+            for i in range(0,len(data_json)):
+                data_send = np.array([value for value in data_json[i].values()])
+                data_predict.append(data_send)
+        
 
-    #Recorro los elementos del json creando los arrays para cada uno y añadiendolo a la lista a predecir
-    for i in range(0,len(data_json)):
-        data_send = np.array([value for value in data_json[i].values()])
-        data_predict.append(data_send)
- 
+            prediction = model.predict(data_predict)   #Predicción de los casos recibidos 
+            result=jsonify({"Prediction":list(prediction)}),200
+            
+        except ValueError:
+            result = "The model expecting 4 features as input",400
+            
 
-    prediction = model.predict(data_predict)   #Predicción de los casos recibidos 
-    return jsonify({"Prediction":list(prediction)})
+    else:
+        result="Error input type: list required",400
+        
+    return result
 
 
 @app.route('/add_entry', methods=["POST"])
 @jwt_required()
-def add_entry():
+def add_entry():  
     data_json = request.json  
-    
-    for i in range(0,len(data_json)):
-        data_send = np.array([value for value in data_json[i].values()])
-        print(i,type(data_send))
-        
-    #por cada elemento del json recibido creamos una fila en nuestra base de datos
-        entries = entry(sepal_length=data_send[0],sepal_width=data_send[1],petal_length=data_send[2],petal_width=data_send[3],specie=data_send[4])
-        
-        db.session.add(entries)
-        db.session.commit()
+    if type(data_json)==list: 
+        try:
+            for i in range(0,len(data_json)):
+                data_send = np.array([value for value in data_json[i].values()])
+                #print(i,type(data_send))
+                
+            #por cada elemento del json recibido creamos una fila en nuestra base de datos
+                entries = entry(sepal_length=data_send[0],sepal_width=data_send[1],petal_length=data_send[2],petal_width=data_send[3],specie=data_send[4])
+                
+                db.session.add(entries)
+                db.session.commit()
+                result= "Added correctly",200
+        except:
+            result = "The model expecting 5 features as input",400
+    else:
+        result="Error input type: list required",400
 
-    return "Added correctly"
+    return result
 
 @app.route('/train', methods=["POST"])
 @jwt_required()
 def train_model():
     file = request.files['']
-    accuracy = train(file)
+    print("---------",file)
+    result = train(file)
 
-    return jsonify({"Accuracy":accuracy}), 200
+    return result
 
 
 if __name__ == "__main__":

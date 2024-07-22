@@ -3,10 +3,12 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 import numpy as np
+from flask import jsonify
 
 import mlflow
 import mlflow.sklearn
 
+file = "IRIS.csv"
 def train(file):
     mlflow.start_run()
     try:
@@ -30,17 +32,18 @@ def train(file):
 
         mlflow.sklearn.log_model(classifier, "decision_tree_model")
 
+        result = jsonify({"Accuracy":accuracy}), 200
+
     except Exception as err:
         
         mlflow.log_params({"error": str(err)})
-    except Warning as warn:
-        
-        mlflow.log_params({"warning": str(warn)})
+        result = "Check that the file is optimal for training the model. It should use the following csv structure :\nsepal_length,sepal_width,petal_length,petal_width,species\n5.1,3.5,1.4,0.2,Iris-setosa (Example)", 400
+
     finally:
         
         mlflow.end_run()
 
     
   
-    return accuracy
+    return result
 
