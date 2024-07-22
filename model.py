@@ -8,7 +8,7 @@ from flask import jsonify
 import mlflow
 import mlflow.sklearn
 
-file = "IRIS.csv"
+
 def train(file):
     mlflow.start_run()
     try:

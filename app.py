@@ -52,12 +52,10 @@ def get_user():
 @app.route('/predict', methods=["POST"])
 @jwt_required()
 def predict():
-    #Cargar modelo
-    #model = pickle.load(open('models/decisiontree.pkl',"rb"))
-    # Get the MLflow tracking URI
+    
     mlflow_tracking_uri = mlflow.get_tracking_uri()
 
-    # Use the tracking URI to build the model URI
+    # Usa la uri anterior para crear el modelo
     latest_run = mlflow.search_runs(order_by=["start_time desc"]).iloc[0]
     model_uri = f"{mlflow_tracking_uri}/0/{latest_run.run_id}/artifacts/decision_tree_model"
     
@@ -99,7 +97,7 @@ def add_entry():
         try:
             for i in range(0,len(data_json)):
                 data_send = np.array([value for value in data_json[i].values()])
-                #print(i,type(data_send))
+                
                 
             #por cada elemento del json recibido creamos una fila en nuestra base de datos
                 entries = entry(sepal_length=data_send[0],sepal_width=data_send[1],petal_length=data_send[2],petal_width=data_send[3],specie=data_send[4])
