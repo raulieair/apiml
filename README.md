@@ -5,7 +5,7 @@ This project is an API created in flask that allows training and inference tasks
 
 ## API Endpoints 
 
-METHOD POST
+### METHOD POST
 
 /token 
 Authentication the user and return a JWT token
@@ -20,7 +20,7 @@ Adds one or more entries to the database
 Make predictions using a trained model
 
 
-METHOD GET
+### METHOD GET
 
 /user
 Show information about the authenticated user
@@ -37,6 +37,7 @@ Sqlite /pip install db-sqlite3/
 
 ## Running the project
 
+### ON LOCAL PYTHON ENVIRONMENT
 From the terminal navigate to the project root folder. Run the following command to install all the 
 necessary pip packages to run the program
 ```
@@ -57,3 +58,17 @@ localhost:5000/token
 
 After training the model we are able to predict
 
+### ON DOCKER
+
+Requirements :
+https://docs.docker.com/install/linux/docker-ce/ubuntu/
+https://docs.docker.com/compose/install/
+
+Build the image 
+```
+   docker-compose build
+```
+Create an run the container
+```
+   docker-compose up
+```
